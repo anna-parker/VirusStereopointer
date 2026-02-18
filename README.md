@@ -28,3 +28,74 @@ Look at `gene=ORF1ab`, there are 2 CDSs for this, one with ribosomal slippage. I
 
 ORF1ab and ORF1a are both "pre-sliced" genes which means for the proteins we are interested in the final products. 
 
+We would like to generate a structure like the following from a GFF3:
+```
+polyprotein_to_mature: {
+    "ORF1a": [
+        {
+            poly_start:266,
+            poly_end: 13483,
+            mature_name: "Orf1a_snip",
+            mature_start: 1
+        },
+    ],
+    "ORF1b": [
+    ]
+},
+uniprot_ref: {
+    'F':"A0A482JPF1",
+    'Orf1a_snip':"A0A482JPF1",
+    'Orf1a_snip2':"A0A482JPF1",
+},
+mature_lengths: {
+    '3CLPro': 306, # use product as name
+    'RdRp': 933,
+},
+```
+
+Get the UniProtKB Id from the gff3 `protein_id` using 
+```
+curl -X 'GET' \
+  'https://rest.uniprot.org/uniprotkb/search?query=YP_009742612.1&fields=accession&sort=accession%20desc&size=50' \
+  -H 'accept: application/json'
+```
+Typical result if valid:
+```
+{
+  "results": [
+    {
+      "entryType": "UniProtKB unreviewed (TrEMBL)",
+      "primaryAccession": "A0ABF7SXH4",
+      "extraAttributes": {
+        "uniParcId": "UPI00137481FB"
+      }
+    }
+  ]
+}
+```
+If there are multiple results or no results this indicates there is no 3D structure.
+
+Alternatively try: 
+```
+curl -X 'GET' \
+  'https://rest.uniprot.org/uniparc/search?query=WBQ20026.1&fields=accession&size=50' \
+  -H 'accept: application/json'
+```
+and use one of the `UniProtKB` accessions:
+```
+{
+  "results": [
+    {
+      "uniParcId": "UPI000BBF9456",
+      "uniProtKBAccessions": [
+        "A0A482JPF1",
+        "A0A292GCX4",
+        "A0A7D5D2B8"
+      ],
+      "oldestCrossRefCreated": "2017-10-05",
+      "mostRecentCrossRefUpdated": "2026-01-28"
+    }
+  ]
+}
+```
+
