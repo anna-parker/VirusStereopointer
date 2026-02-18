@@ -5,6 +5,7 @@ import re
 import colorsys
 import gzip
 import base64
+import requests
 
 rx_pos = re.compile(r"^(?P<prot>[A-Z]):(?P<mutFrom>[A-Z\*])(?P<pos>\d+)(?P<mutTo>[A-Z\*])$")
 
@@ -28,7 +29,20 @@ def create_csv_entry(
     return f"{protein_name[prot]}\t{pos}\t{pos}\t{to_hex(colorsys.hsv_to_rgb(int(pos)/lengths[prot], frequency, 1))}\tGenSpectrum\t{mutFrom}{pos}{mutTo}"
 
 csv_content="\n".join([create_csv_entry(*idx, val) for idx, val in average.items()])
-byte_object = gzip.compress(csv_content.encode(), compresslevel=9)
+with open("output.csv", "w") as f:
+    f.write(csv_content)
+byte_object = gzip.compress(csv_content.encode())
 base64_encoded = base64.b64encode(byte_object)
 
 print(f"https://swissmodel.expasy.org/repository/uniprot/{protein_name['F']}?annot={base64_encoded.decode()}")
+
+annotations = csv_content
+
+response = requests.post('https://swissmodel.expasy.org/repository/annotation/create',
+      data={
+          'email': None,
+          'title': 'Genspectrum RSV mutations',
+          'annotation_data': annotations
+      })
+
+print(response.status_code, response.json())
