@@ -1,0 +1,7 @@
+P0DTD1	1	10	#332288	nsp1_1-10_uncovered
+P0DTD1	10	20	#117733	https://swissmodel.expasy.org/	nsp1_10-20_part_covered
+P0DTD1	40	100	#44aa99	nsp1_40-100_covered
+P0DTD1	1050	1100	#88ccee	A text reference	nsp3_232-382_covered
+P0DTD1	1150	1250	#ddcc77	nsp3_332-432_covered_multi
+P0DTD1	4800	4900	#cc6677	Pol/RdRp_408-508_covered
+P0DTC2	1000	1100	#aa4499	S glycoprotein_1000-1100_covered

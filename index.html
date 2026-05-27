@@ -1,0 +1,254 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        font-family: sans-serif;
+      }
+
+      header {
+        height: 60px;
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid #ddd;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+      }
+
+      main {
+        height: calc(100% - 60px);
+      }
+
+      #viewer {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+
+      #legend {
+        position: absolute;
+        top: 80px;
+        right: 20px;
+
+        width: 180px;
+
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #ccc;
+        border-radius: 8px;
+
+        padding: 12px;
+
+        font-size: 14px;
+        z-index: 1000;
+      }
+
+      #legend-title {
+        margin-bottom: 8px;
+        font-weight: bold;
+      }
+
+      #legend-gradient {
+        height: 20px;
+
+        border-radius: 4px;
+
+        background: linear-gradient(
+          to right,
+          blue,
+          cyan,
+          lime,
+          yellow,
+          orange,
+          red
+        );
+      }
+
+      #legend-labels {
+        display: flex;
+        justify-content: space-between;
+
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <h1>RSV mutation viewer</h1>
+      <button id="showF">F protein</button>
+      <button id="showG">G protein</button>
+    </header>
+
+    <div id="legend">
+      <div id="legend-title">Mutation frequency</div>
+
+      <div id="legend-gradient"></div>
+
+      <div id="legend-labels">
+        <span>0%</span>
+        <span>50%</span>
+        <span>100%</span>
+      </div>
+    </div>
+
+    <main>
+      <div id="viewer"></div>
+    </main>
+
+    <script>
+      const mutationFile = "mutations.json";
+      const proteinConfig = {
+        F: { pdb: "pdb/rsv-a/8W3N.pdb", label: "F protein", chain: "F" },
+        G: { pdb: "pdb/rsv-a/7t8w.pdb", label: "G protein", chain: "D" },
+      };
+
+      let viewer = null;
+      let mutations = null;
+      let protein = "F";
+      let chain = "A";
+
+      document.getElementById("showF").onclick = () => loadProtein("F");
+      document.getElementById("showG").onclick = () => loadProtein("G");
+
+      function buildMutationIndex(mutations) {
+        const result = {};
+
+        for (const m of mutations) {
+          const sequenceName = m.sequenceName;
+          const pos = Number(m.position);
+
+          if (!result[sequenceName]) {
+            result[sequenceName] = {};
+          }
+
+          if (!result[sequenceName][pos]) {
+            result[sequenceName][pos] = {
+              position: pos,
+              totalFrequency: 0,
+              mutations: [],
+            };
+          }
+
+          result[sequenceName][pos].totalFrequency += Number(m.proportion);
+
+          result[sequenceName][pos].mutations.push({
+            mutationFrom: m.mutationFrom,
+            mutationTo: m.mutationTo,
+            proportion: Number(m.proportion),
+            count: Number(m.count),
+            coverage: Number(m.coverage),
+          });
+        }
+
+        return result;
+      }
+
+      function freqToColor(f) {
+        const hue = ((1 - f) * 240) / 360;
+        const [r, g, b] = hsvToRgb(hue, 1, 1);
+        return (r << 16) | (g << 8) | b;
+      }
+
+      function hsvToRgb(h, s, v) {
+        let i = Math.floor(h * 6),
+          f = h * 6 - i;
+        let p = v * (1 - s),
+          q = v * (1 - f * s),
+          t = v * (1 - (1 - f) * s);
+        let [r, g, b] = [
+          [v, t, p],
+          [q, v, p],
+          [p, v, t],
+          [p, q, v],
+          [t, p, v],
+          [v, p, q],
+        ][i % 6];
+        return [r, g, b].map((x) => Math.round(x * 255));
+      }
+
+      async function loadProtein(protein) {
+        const [pdb, mutations] = await Promise.all([
+          fetch(proteinConfig[protein].pdb).then((r) => r.text()),
+          fetch(mutationFile).then((r) => r.json()),
+        ]);
+
+        const byPosition = buildMutationIndex(mutations)[protein];
+        chain = proteinConfig[protein].chain;
+
+        console.log(byPosition);
+        console.log(chain);
+
+        const viewer = $3Dmol.createViewer("viewer", {
+          backgroundColor: "white",
+        });
+
+        viewer.addModel(pdb, "pdb");
+
+        viewer.setStyle(
+          { chain },
+          {
+            cartoon: { color: "lightgray" },
+          },
+        );
+
+        for (const [pos, info] of Object.entries(byPosition)) {
+          const frequency = Math.min(info.totalFrequency, 1);
+
+          viewer.setStyle(
+            { chain, resi: Number(pos) },
+            { cartoon: { color: freqToColor(frequency) } },
+          );
+
+          viewer.setHoverable(
+            { chain, resi: Number(pos) },
+            true,
+            function (atom, viewer) {
+              if (!atom.label) {
+                const lines = info.mutations
+                  .sort((a, b) => b.proportion - a.proportion)
+                  .map(
+                    (m) =>
+                      `${m.mutationFrom}${pos}${m.mutationTo}: ` +
+                      `${(m.proportion * 100).toFixed(2)}% ` +
+                      `(${m.count}/${m.coverage})`,
+                  );
+
+                atom.label = viewer.addLabel(
+                  `Position ${pos}\nTotal: ${(info.totalFrequency * 100).toFixed(2)}%\n` +
+                    lines.join("\n"),
+                  {
+                    position: atom,
+                    backgroundColor: "white",
+                    fontColor: "black",
+                    fontSize: 12,
+                    borderColor: "black",
+                    borderThickness: 1,
+                  },
+                );
+              }
+            },
+            function (atom, viewer) {
+              if (atom.label) {
+                viewer.removeLabel(atom.label);
+                delete atom.label;
+              }
+            },
+          );
+        }
+
+        viewer.zoomTo({ chain });
+        viewer.render();
+      }
+
+      loadProtein("F");
+    </script>
+  </body>
+</html>
