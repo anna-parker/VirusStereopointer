@@ -7,24 +7,73 @@
       body {
         margin: 0;
         height: 100%;
-        font-family: sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        display: flex;
+        flex-direction: column;
+        background: #0a1628;
+        color: #e2e8f0;
       }
 
       header {
-        height: 60px;
-        padding: 0 16px;
+        flex-shrink: 0;
+        padding: 10px 16px 8px;
+        border-bottom: 1px solid #1e3a5f;
+        background: #0d1f3c;
+      }
+
+      .header-top {
         display: flex;
         align-items: center;
-        border-bottom: 1px solid #ddd;
+        gap: 10px;
+        margin-bottom: 8px;
       }
 
       h1 {
         margin: 0;
-        font-size: 24px;
+        font-size: 20px;
+        font-weight: 600;
+        color: #e2e8f0;
+        letter-spacing: 0.04em;
+      }
+
+      .header-controls {
+        display: flex;
+        align-items: center;
+      }
+
+      select#proteinSelect {
+        appearance: none;
+        -webkit-appearance: none;
+        background-color: #1a3354;
+        border: 1px solid #2d5a8e;
+        color: #e2e8f0;
+        padding: 5px 30px 5px 10px;
+        border-radius: 6px;
+        font-size: 13px;
+        cursor: pointer;
+        outline: none;
+        min-width: 170px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235dd8e8' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+
+      select#proteinSelect:hover {
+        border-color: #5dd8e8;
+      }
+
+      select#proteinSelect:focus {
+        border-color: #5dd8e8;
+        box-shadow: 0 0 0 2px rgba(93, 216, 232, 0.2);
       }
 
       main {
-        height: calc(100% - 60px);
+        flex: 1;
+        min-height: 0;
+        position: relative;
       }
 
       #viewer {
@@ -35,31 +84,29 @@
 
       #legend {
         position: absolute;
-        top: 80px;
-        right: 20px;
-
+        top: 12px;
+        right: 16px;
         width: 180px;
-
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid #ccc;
+        background: rgba(13, 31, 60, 0.92);
+        border: 1px solid #2d5a8e;
         border-radius: 8px;
-
         padding: 12px;
-
-        font-size: 14px;
+        font-size: 13px;
         z-index: 1000;
       }
 
       #legend-title {
         margin-bottom: 8px;
-        font-weight: bold;
+        font-weight: 600;
+        color: #94a3b8;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
       }
 
       #legend-gradient {
-        height: 20px;
-
+        height: 12px;
         border-radius: 4px;
-
         background: linear-gradient(
           to right,
           blue,
@@ -74,49 +121,112 @@
       #legend-labels {
         display: flex;
         justify-content: space-between;
-
-        margin-top: 4px;
+        margin-top: 5px;
+        color: #94a3b8;
+        font-size: 11px;
       }
     </style>
   </head>
 
   <body>
     <header>
-      <h1>RSV mutation viewer</h1>
-      <button id="showF">F protein</button>
-      <button id="showG">G protein</button>
-    </header>
-
-    <div id="legend">
-      <div id="legend-title">Mutation frequency</div>
-
-      <div id="legend-gradient"></div>
-
-      <div id="legend-labels">
-        <span>0%</span>
-        <span>50%</span>
-        <span>100%</span>
+      <div class="header-top">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 36 36"
+          width="36"
+          height="36"
+          role="img"
+          aria-label="VirusStereopointer logo"
+        >
+          <defs>
+            <clipPath id="ico-clip">
+              <circle cx="18" cy="18" r="16" />
+            </clipPath>
+          </defs>
+          <circle cx="18" cy="18" r="16" fill="#0a1628" />
+          <g
+            clip-path="url(#ico-clip)"
+            stroke="#5dd8e8"
+            stroke-width="0.5"
+            stroke-linejoin="round"
+          >
+            <!-- Top cap: center → upper ring -->
+            <polygon points="18,18 18,11 24.7,15.8" fill="#1d6fa8" />
+            <polygon points="18,18 24.7,15.8 22.1,23.7" fill="#155d91" />
+            <polygon points="18,18 22.1,23.7 13.9,23.7" fill="#1d6fa8" />
+            <polygon points="18,18 13.9,23.7 11.3,15.8" fill="#155d91" />
+            <polygon points="18,18 11.3,15.8 18,11" fill="#1d6fa8" />
+            <!-- Upper band: upper ring → lower ring (pointing inward) -->
+            <polygon points="18,11 26.2,6.7 24.7,15.8" fill="#0f4a78" />
+            <polygon points="24.7,15.8 31.3,22.3 22.1,23.7" fill="#0a3d68" />
+            <polygon points="22.1,23.7 18,32 13.9,23.7" fill="#0f4a78" />
+            <polygon points="13.9,23.7 4.7,22.3 11.3,15.8" fill="#0a3d68" />
+            <polygon points="11.3,15.8 9.8,6.7 18,11" fill="#0f4a78" />
+            <!-- Lower band: lower ring triangles (pointing outward) -->
+            <polygon points="26.2,6.7 24.7,15.8 31.3,22.3" fill="#083258" />
+            <polygon points="31.3,22.3 22.1,23.7 18,32" fill="#062a4a" />
+            <polygon points="18,32 13.9,23.7 4.7,22.3" fill="#083258" />
+            <polygon points="4.7,22.3 11.3,15.8 9.8,6.7" fill="#062a4a" />
+            <polygon points="9.8,6.7 18,11 26.2,6.7" fill="#083258" />
+          </g>
+          <circle
+            cx="18"
+            cy="18"
+            r="16"
+            fill="none"
+            stroke="#5dd8e8"
+            stroke-width="1.5"
+          />
+        </svg>
+        <h1>VirusStereopointer</h1>
       </div>
-    </div>
+      <div class="header-controls">
+        <select id="proteinSelect">
+          <optgroup label="RSV-A">
+            <option value="rsv-a:F" selected>F protein</option>
+            <option value="rsv-a:G">G protein</option>
+          </optgroup>
+        </select>
+      </div>
+    </header>
 
     <main>
       <div id="viewer"></div>
+      <div id="legend">
+        <div id="legend-title">Mutation frequency</div>
+        <div id="legend-gradient"></div>
+        <div id="legend-labels">
+          <span>0%</span>
+          <span>50%</span>
+          <span>100%</span>
+        </div>
+      </div>
     </main>
 
     <script>
-      const mutationFile = "mutations.json";
+      const mutationUrl =
+        "https://lapis.pathoplexus.org/rsv-a/sample/aminoAcidMutations" +
+        "?dataFormat=JSON&downloadAsFile=true&downloadFileBasename=mutations";
       const proteinConfig = {
-        F: { pdb: "pdb/rsv-a/8W3N.pdb", label: "F protein", chain: "F" },
-        G: { pdb: "pdb/rsv-a/7t8w.pdb", label: "G protein", chain: "D" },
+        "rsv-a:F": {
+          pdb: "pdb/rsv-a/8W3N.pdb",
+          label: "F protein",
+          chain: "F",
+          sequenceName: "F",
+        },
+        "rsv-a:G": {
+          pdb: "pdb/rsv-a/7t8w.pdb",
+          label: "G protein",
+          chain: "D",
+          sequenceName: "G",
+        },
       };
 
-      let viewer = null;
-      let mutations = null;
-      let protein = "F";
       let chain = "A";
 
-      document.getElementById("showF").onclick = () => loadProtein("F");
-      document.getElementById("showG").onclick = () => loadProtein("G");
+      document.getElementById("proteinSelect").onchange = (e) =>
+        loadProtein(e.target.value);
 
       function buildMutationIndex(mutations) {
         const result = {};
@@ -174,20 +284,28 @@
         return [r, g, b].map((x) => Math.round(x * 255));
       }
 
-      async function loadProtein(protein) {
+      async function loadProtein(key) {
+        const config = proteinConfig[key];
         const [pdb, mutations] = await Promise.all([
-          fetch(proteinConfig[protein].pdb).then((r) => r.text()),
-          fetch(mutationFile).then((r) => r.json()),
+          fetch(config.pdb).then((r) => r.text()),
+          fetch(mutationUrl, {
+            headers: {
+              accept: "application/json",
+            },
+          }).then((r) => {
+            if (!r.ok) {
+              throw new Error(`Mutation fetch failed: ${r.status}`);
+            }
+            console.log("Mutations fetched successfully");
+            return r.json();
+          }),
         ]);
 
-        const byPosition = buildMutationIndex(mutations)[protein];
-        chain = proteinConfig[protein].chain;
-
-        console.log(byPosition);
-        console.log(chain);
+        const byPosition = buildMutationIndex(mutations)[config.sequenceName];
+        chain = config.chain;
 
         const viewer = $3Dmol.createViewer("viewer", {
-          backgroundColor: "white",
+          backgroundColor: "black",
         });
 
         viewer.addModel(pdb, "pdb");
@@ -195,7 +313,7 @@
         viewer.setStyle(
           { chain },
           {
-            cartoon: { color: "lightgray" },
+            cartoon: { color: "white" },
           },
         );
 
@@ -248,7 +366,7 @@
         viewer.render();
       }
 
-      loadProtein("F");
+      loadProtein("rsv-a:F");
     </script>
   </body>
 </html>
